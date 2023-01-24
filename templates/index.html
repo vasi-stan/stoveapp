@@ -28,10 +28,11 @@
 	<div>
 		<h3 style="color: red;">Apa centrala: <span id="tempCentralaID">{{ tempCentrala }}</span> <sup>o</sup>C</h2>
 	</div>
+<!--
 	<div>
 		<h3 style="color: red;">Rezervor peleti: <span id="distPeletiID">{{ dist }}</span> cm</h2>
 	</div>
-
+-->
 	
 	</div>
 	<div class="card">
@@ -44,12 +45,12 @@
                   	<option value="2">Stabil</option>
                       	<option value="3">Ardere</option>
                       	<option value="4">Stop Ardere</option>
-						<option value="11">Stop Ardere fara senzor Living</option>
+			<option value="11">Stop Ardere fara senzor Living</option>
                       	<option value="6">Aprindere fara peleti</option>
-						<option value="10">Aprindere fara senzor Living</option>
+			<option value="10">Aprindere fara senzor Living</option>
                       	<option value="7">Eroare Aprindere</option>
                       	<option value="8">Eroare Ardere</option>
-						<option value="9">All Jobs Off</option>
+			<option value="9">All Jobs Off</option>
   		</select>
 		<button onclick="setStatusCentrala()" class="btn btn-primary">SET</button>
 	</div>
@@ -70,14 +71,21 @@
 	<div>Rezistenta: <span id="stareRezistentaID">{{ stareRezistenta }}</span>
 		<button onclick="buttonOn('rezistenta')" class="btn btn-primary">ON</button>
 		<button onclick="buttonOff('rezistenta')" class="btn btn-primary">OFF</button>
-		<button onclick="rezistin()" class="btn btn-primary">IN</button>
+	<!--	<button onclick="rezistin()" class="btn btn-primary">IN</button>
 		<button onclick="rezistout()" class="btn btn-primary">OUT</button>
-		<span id="statusRezistentaID">{{ statusRezistenta }}</span>
+		<span id="statusRezistentaID">{{ statusRezistenta }}</span> -->
 	</div>
+<!--	<div>Activare Rezistenta: <span id="stareActivareRezistentaID">{{ stareActivareRezistenta }}</span>
+		<button onclick="buttonOn('activareRezistenta')" class="btn btn-primary">ON</button>
+		<button onclick="buttonOff('activareRezistenta')" class="btn btn-primary">OFF</button>
+	</div>
+-->
 	<div>timpSneckArdere: <span id="timpSneckArdereID">{{timpSneckArdere}}</span>
 		<input type="number" id="input2" placeholder="nr intreg">
 		<button onclick="timpSneckArdere()" class="btn btn-primary">SET</button>
 	</div>
+
+	
 	</div>
 
 
@@ -147,6 +155,18 @@
         var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function() {
           if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("stareActivareRezistentaID").innerHTML = this.responseText;
+          }
+        };
+        xhttp.open("GET", "/statusCentrala/stareActivareRezistenta", true);
+        xhttp.send();
+      }, 300) ;
+
+
+	setInterval(function ( ) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
             document.getElementById("statusRezistentaID").innerHTML = this.responseText;
           }
         };
@@ -189,16 +209,7 @@
         xhttp.open("GET", "/tempCentrala", true);
         xhttp.send();
       }, 2000) ;
-	setInterval(function ( ) {
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
-          if (this.readyState == 4 && this.status == 200) {
-            document.getElementById("distPeletiID").innerHTML = this.responseText;
-          }
-        };
-        xhttp.open("GET", "/distance", true);
-        xhttp.send();
-      }, 5000) ;
+	
 
 	setInterval(function ( ) {
         var xhttp = new XMLHttpRequest();

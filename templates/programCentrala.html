@@ -18,7 +18,10 @@
 	
 	<div class="card">
 		<div>
-			<h3 style="color: red;">Temperatura Living: <span id="evacID">{{ tempLiving }}</span> <sup>o</sup>C</h2>
+			<h3 style="color: red;">Living: <span id="livingID">{{ tempLiving }}</span> <sup>o</sup>C</h2>
+			<h3 style="color: red;">Terasa: <span id="afaraID">{{ tempAfara }}</span> <sup>o</sup>C</h2>
+			<h3 style="color: red;">Dormitor: <span id="dormitorID">{{ tempDormitor }}</span> <sup>o</sup>C</h2>
+			
 			<h4 style="color: blue;"><span id="statusProgramID">{{ statusProgram }}</span>: <span id="startTemperaturaID">{{ startTemperatura }}</span> - <span id="stopTemperaturaID">{{ stopTemperatura }}</span> </h4>
 		</div>		
 	</div>
@@ -31,11 +34,13 @@
                       		<option value="PROG">PROG</option>
                       		<option value="PROG1">PROG1(21.00-22.00)</option>
                       		<option value="PROG2">PROG2(21.50-22.50)</option>
-							<option value="PROG3">PROG3(20.50-21.50)</option>
-							<option value="FIX">FIX</option>
-							<option value="FIX2">FIX2</option>
-							<option value="FIX3">FIX3</option>
-							<option value="FIX4">FIX4</option>
+				<option value="PROG3">PROG3(20.50-21.50)</option>
+				<option value="PROG4">PROG4</option>
+				<option value="FIX">FIX</option>
+				<option value="FIX2">FIX2</option>
+				<option value="FIX3">FIX3</option>
+				<option value="FIX4">FIX4</option>
+				<option value="FIX5">FIX5</option>
                       		<option value="AER">AER(11.00-12.00)</option>
                       		<option value="CALD">CALD(27.00-28.00)</option>
   			</select>
@@ -51,12 +56,35 @@
         var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function() {
           if (this.readyState == 4 && this.status == 200) {
-            document.getElementById("evacID").innerHTML = this.responseText;
+            document.getElementById("livingID").innerHTML = this.responseText;
           }
         };
         xhttp.open("GET", "/programCentrala/tempLiving", true);
         xhttp.send();
       }, 10000) ;
+	setInterval(function ( ) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("afaraID").innerHTML = this.responseText;
+          }
+        };
+        xhttp.open("GET", "/programCentrala/tempAfara", true);
+        xhttp.send();
+      }, 10000) ;
+	setInterval(function ( ) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("dormitorID").innerHTML = this.responseText;
+          }
+        };
+        xhttp.open("GET", "/programCentrala/tempDormitor", true);
+        xhttp.send();
+      }, 10000) ;
+
+	
+
 	setInterval(function ( ) {
         var xhttp = new XMLHttpRequest();
         xhttp.onreadystatechange = function() {

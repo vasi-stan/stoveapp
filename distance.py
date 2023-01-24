@@ -39,4 +39,4 @@ def distance():
     distance = (TimeElapsed * 34320) / 2
  
     return distance
- 
+
