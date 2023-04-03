@@ -79,4 +79,4 @@ def moveRezistenta(modein, deg, rot, dir, spd):
 
 	GPIO.output(not_reset, False)
 
-#moveRezistenta(2, 1.8, 6, 1, 100)
+#moveRezistenta(5, 1.8, 1.5, 0, 100)

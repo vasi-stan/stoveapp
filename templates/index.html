@@ -9,8 +9,8 @@
 	<nav class="navbar navbar-expand-lg navbar-light bg-light">
   		<div class="container-fluid">
     		<a class="btn btn-primary btn-lg" href="/centrala">Centrala</a>
-			<a class="btn btn-primary btn-lg" href="/dateFunctionare">Date Functionare</a>
-			<a class="btn btn-primary btn-lg" href="/">Program Centrala</a>	    			
+			<a class="btn btn-primary btn-lg" href="/dateFunctionareInitial">Date Functionare</a>
+			<a class="btn btn-primary btn-lg" href="/programCentrala">Program Centrala</a>	    			
   		</div>
 	</nav>
 
@@ -80,12 +80,21 @@
 		<button onclick="buttonOff('activareRezistenta')" class="btn btn-primary">OFF</button>
 	</div>
 -->
-	<div>timpSneckArdere: <span id="timpSneckArdereID">{{timpSneckArdere}}</span>
-		<input type="number" id="input2" placeholder="nr intreg">
+	<div>timpSneckArdere: <span id="timpSneckArdereID">{{ timpSneckArdere }}</span>
+		<input type="number" id="input2" placeholder="nr real">
 		<button onclick="timpSneckArdere()" class="btn btn-primary">SET</button>
 	</div>
 
-	
+	<div>timpVentilatorAprindere: <span id="timpVentilatorAprindereID">{{ timpVentilatorAprindere }}</span>
+		<input type="number" id="input3" placeholder="nr real">
+		<button onclick="timpVentilatorAprindere()" class="btn btn-primary">SET</button>
+	</div>
+	<div>timpSneckAprindere: <span id="timpSneckAprindereID">{{ timpSneckAprindere }}</span>
+		<input type="number" id="input4" placeholder="nr intreg">
+		<button onclick="timpSneckAprindere()" class="btn btn-primary">SET</button>
+	</div>
+
+
 	</div>
 
 
@@ -151,29 +160,7 @@
         xhttp.send();
       }, 300) ;
 
-	setInterval(function ( ) {
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
-          if (this.readyState == 4 && this.status == 200) {
-            document.getElementById("stareActivareRezistentaID").innerHTML = this.responseText;
-          }
-        };
-        xhttp.open("GET", "/statusCentrala/stareActivareRezistenta", true);
-        xhttp.send();
-      }, 300) ;
-
-
-	setInterval(function ( ) {
-        var xhttp = new XMLHttpRequest();
-        xhttp.onreadystatechange = function() {
-          if (this.readyState == 4 && this.status == 200) {
-            document.getElementById("statusRezistentaID").innerHTML = this.responseText;
-          }
-        };
-        xhttp.open("GET", "/statusCentrala/statusRezistenta", true);
-        xhttp.send();
-      }, 10000) ;
-		
+	
 
 
 
@@ -220,7 +207,31 @@
         };
         xhttp.open("GET", "/timpSneckArdere", true);
         xhttp.send();
-      }, 1000) ;
+      }, 3000) ;
+
+	setInterval(function ( ) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("timpVentilatorAprindereID").innerHTML = this.responseText;
+          }
+        };
+        xhttp.open("GET", "/timpVentilatorAprindere", true);
+        xhttp.send();
+      }, 3000) ;
+
+	setInterval(function ( ) {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4 && this.status == 200) {
+            document.getElementById("timpSneckAprindereID").innerHTML = this.responseText;
+          }
+        };
+        xhttp.open("GET", "/timpSneckAprindere", true);
+        xhttp.send();
+      }, 3000) ;
+
+
 	
 	function rezistin() {
 		var xhttp = new XMLHttpRequest();
@@ -247,6 +258,21 @@
 		xhttp.open("GET", url, true);
         	xhttp.send();
 	}
+	function timpVentilatorAprindere() {
+		var param5 = document.getElementById("input3").value.toString()
+		var url = "/ventilatorTimpAprindere/" + param5
+		var xhttp = new XMLHttpRequest();
+		xhttp.open("GET", url, true);
+        	xhttp.send();
+	}
+	function timpSneckAprindere() {
+		var param6 = document.getElementById("input4").value.toString()
+		var url = "/sneckTimpAprindere/" + param6
+		var xhttp = new XMLHttpRequest();
+		xhttp.open("GET", url, true);
+        	xhttp.send();
+	}
+
 
 
 

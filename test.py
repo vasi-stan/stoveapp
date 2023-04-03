@@ -1,27 +1,33 @@
-import sqlite3
+from flask import Flask, render_template
+from flask_login import LoginManager
+login_manager = LoginManager()
 
-conn = sqlite3.connect('centrala.db')
+login_manager.init_app(app)
 
-c = conn.cursor()
+app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 
-#c.execute("""CREATE TABLE datefunctionare(
-#	numar int,
-#	data_pornire text,
-#	data_oprire text,
-#	timp_functionare text
-#)""")
+@login_manager.user_loader
+def load_user(user_id):
+    return User.get(user_id)
 
-#c.execute("INSERT INTO datefunctionare VALUES (1, datetime('now'), datetime('now'), '')")
-#statusCentrala = 'Stabil'
-#url = "UPDATE datefunctionare SET data_oprire = datetime('now') WHERE numar = " + str(1)
-#url = "DELETE FROM datefunctionare"
-#c.execute(url)
-c.execute("SELECT * FROM functionare")
-items = c.fetchall()
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    # Here we use a class of some kind to represent and validate our
+    # client-side form data. For example, WTForms is a library that will
+    # handle this for us, and we use a custom LoginForm to validate.
+    form = LoginForm()
+    if form.validate_on_submit():
+        # Login and validate the user.
+        # user should be an instance of your `User` class
+        login_user(user)
 
-for item in items:
-	print(item)
+        flask.flash('Logged in successfully.')
 
-conn.commit()
+        next = flask.request.args.get('next')
+        # is_safe_url should check if the url is safe for redirects.
+        # See http://flask.pocoo.org/snippets/62/ for an example.
+        if not is_safe_url(next):
+            return flask.abort(400)
 
-conn.close()
+        return flask.redirect(next or flask.url_for('index'))
+    return flask.render_template('login.html', form=form)

@@ -1,5 +1,6 @@
 
 from flask import Flask, render_template
+from flask_login import LoginManager
 import datetime
 #from ds18b20 import read_temp
 import MAX6675 as MAX6675
@@ -11,11 +12,10 @@ import os
 import smtplib
 import time
 from requests import get
-from motor3 import moveRezistenta
 import psutil
 
 
-
+login_manager = LoginManager()
 
 
 ventilator = 6
@@ -75,26 +75,37 @@ conn = sqlite3.connect("centrala.db", check_same_thread=False)
 cursor = conn.cursor()
 
 
-
 cursor.execute("SELECT * FROM datefunctionare")
 items = cursor.fetchall()
 numarCurent = len(items)
 
+
+
+
 def temperaturaLiving():
 	global tempLiving
-	temperature = get('http://192.168.1.137:5555/temperature').text
+	try:
+		temperature = get('http://192.168.1.196:5555/temperature').text
+	except:
+		temperature = "44.44"
 	tempLiving = float(temperature)
 	return tempLiving
 
 def temperaturaAfara():
 	global tempAfara
-	temperature = get('http://192.168.1.212:5555/temperature').text
+	try:
+		temperature = get('http://192.168.1.219:5555/temperature').text
+	except:
+		temperature = "44.44"
 	tempAfara = float(temperature)
 	return tempAfara
 
 def temperaturaDormitor():
 	global tempDormitor
-	temperature = get('http://192.168.1.134:5555/temperature').text
+	try:
+		temperature = get('http://192.168.1.182:5555/temperature').text
+	except:
+		temperatuire = "44.44"
 	tempDormitor = float(temperature)
 	return tempDormitor
 
@@ -109,11 +120,11 @@ def senzori():
 	Temp = round(sensor.readTempC(), 1)
 	time.sleep(0.3)
 	Temp2 = round(sensor1.readTempC(), 1)
-	if (Temp2 > 40):
+	if (Temp2 > 41):
 		if (cont == 0):
 			pinON("pompa")
 			cont = 1
-	else:
+	if (Temp2 < 39):
 		if (cont == 1):
 			pinOFF("pompa")
 			cont = 0
@@ -372,7 +383,7 @@ def rezistentaAprindere():
 
 
 def stopSneck():
-	global statusCentrala, cursor, conn
+	global statusCentrala, cursor, conn, timpVentilatorAprindere
 	statusCentrala = 'Aprindere'
 	url = "UPDATE functionare SET status = '"+ statusCentrala +"' WHERE nume = 'centrala'"
 	cursor.execute(url)
@@ -384,12 +395,12 @@ def stopSneck():
 	pinOFF('sneck')
 	scheduler.add_job(id="stopAprindere", func = stopAprindere, trigger = 'interval', seconds = 600)
 	pinON('rezistenta')
-	scheduler.add_job(id="rezistentaAprindere", func = rezistentaAprindere, trigger = 'interval', seconds = 50)
+	scheduler.add_job(id="rezistentaAprindere", func = rezistentaAprindere, trigger = 'interval', seconds = timpVentilatorAprindere)
 	scheduler.add_job(id="stareTemperaturaEvacuare", func = stareTemperaturaEvacuare, trigger = 'interval', seconds = 3)
 
 
 def aprindere():
-	global temperaturaInitialaAprindere, Temp, statusCentrala, cursor, conn, numarCurent, startTemperatura, statusProgram, tempLiving
+	global temperaturaInitialaAprindere, Temp, statusCentrala, cursor, conn, numarCurent, startTemperatura, statusProgram, tempLiving, timpSneckAprindere
 	temperaturaInitialaAprindere = Temp
 	statusCentrala = 'Aprindere'
 	numarCurent += 1
@@ -399,7 +410,7 @@ def aprindere():
 	cursor.execute(url2)
 	conn.commit()
 	pinON('sneck')
-	scheduler.add_job(id="stopSneck", func = stopSneck, trigger = 'interval', seconds = 110)
+	scheduler.add_job(id="stopSneck", func = stopSneck, trigger = 'interval', seconds = timpSneckAprindere)
 
 
 def allJobsOff():
@@ -437,8 +448,22 @@ def programCentralaMonitorFunctionare(program):
 		startTemperatura = 21
 		stopTemperatura = 22
 	if(program == "PROG2"):
-		startTemperatura = 21.5
-		stopTemperatura = 22.5
+		if(1<= weekday and weekday <=5):
+			if((22 > hour and hour >= 17) or (8 > hour and hour >= 6)):
+				startTemperatura = 20.5
+				stopTemperatura = 21.5
+			elif(24 < hour or hour <= 6):
+				startTemperatura = 19.5
+				stopTemperatura = 20.5
+			else:
+				startTemperatura = 20.5
+				stopTemperatura = 21.5
+		elif(23 > hour and hour >= 8):
+			startTemperatura = 20.5
+			stopTemperatura = 21.5
+		else:
+			startTemperatura = 19.5
+			stopTemperatura = 20.5	
 	if(program == "PROG3"):
 		startTemperatura = 20.5
 		stopTemperatura = 21.5
@@ -574,6 +599,8 @@ for item in items:
 	timpSneckArdere = item[2]
 	stareCentrala = item[3]
 	statusProgram = item[4]
+	timpVentilatorAprindere = item[5]
+	timpSneckAprindere = item[6]
 	programCentralaMonitorFunctionare(statusProgram)
 	if(statusCentrala == "Aprindere"):
 		temperaturaInitialaAprindere = sensor.readTempC()
@@ -603,7 +630,7 @@ pinOFF('rezistenta')
 
 @app.route("/centrala")
 def index():
-	global Temp, Temp2, statusCentrala, timpSneckArdere, stareVentilator, stareSneck, starePompa, stareRezistenta, statusRezistenta, stareActivareRezistenta
+	global Temp, Temp2, statusCentrala, timpSneckArdere, stareVentilator, stareSneck, starePompa, stareRezistenta, statusRezistenta, stareActivareRezistenta, setTimpVentilatorAprindere
 	templateData = {
 		'tempEvacuare': Temp,
 		'tempCentrala': Temp2,
@@ -612,10 +639,13 @@ def index():
 		'stareVentilator': stareVentilator,
 		'stareSneck': stareSneck,
 		'starePompa': starePompa,
-		'stareRezistenta': stareRezistenta	}
+		'stareRezistenta': stareRezistenta,
+		'timpVentilatorAprindere': timpVentilatorAprindere,
+		'timpSneckAprindere': timpSneckAprindere
+	}
 	return render_template('index.html', **templateData)
 
-@app.route("/")
+@app.route("/programCentrala")
 def programCentrala():
 	global tempLiving, statusProgram, startTemperatura, stopTemperatura, tempAfara, tempDormitor
 	templateData = {
@@ -628,16 +658,177 @@ def programCentrala():
 	}
 	return render_template('programCentrala.html', **templateData)
 
+@app.route("/dateFunctionareInitial")
+def dateFunctionareInitial():
+	global cursor
+	cursor.execute("SELECT * FROM datefunctionare")
+	items = cursor.fetchall()
+
+	itemi = list()
+
+	anSet = set()
+	data_dict = dict()
+
+	for item in items:
+		data_start = str(item[1])
+		data_start = data_start[:10]
+		an = data_start[-4:]
+		anSet.add(an)
+
+
+	list_an = sorted(anSet)
+	lunalist = list() 
+
+	for an in range(len(list_an)):
+		lunaSet = set()
+	
+		for item in items:
+			data_start = str(item[1])
+			data_start = data_start[:10]
+			anul = data_start[-4:]
+			if anul == list_an[an]: 
+				luna = data_start[3:5]
+				lunaSet.add(luna)
+		list_luna = sorted(lunaSet)
+		lunalist.append(list_luna)
+	
+
+	ultimaLuna = lunalist[len(lunalist)-1]
+	ultimaLuna = ultimaLuna[len(ultimaLuna)-1]
+
+	for item in items:
+		data_start = str(item[1])
+		data_start = data_start[:10]
+		anul = data_start[-4:]
+		if anul == list_an[len(list_an) - 1]:
+			luna = data_start[3:5]
+			if luna == ultimaLuna:
+				itemi.append(item)
+
+	itemi = reversed(itemi)
+
+	templateData = {
+		'items': itemi,
+		'list_an': list_an,
+		'lunalist': lunalist
+		}
+	return render_template('bazaDateInitiala.html', **templateData)
+
+
+@app.route("/dateFunctionare/paginaNoua/<string:zaAnul>/<string:zaLuna>")
+def dateFunctionareAnul(zaAnul,zaLuna):
+	
+	global cursor
+	cursor.execute("SELECT * FROM datefunctionare")
+	items = cursor.fetchall()
+
+	itemi = list()
+
+	anSet = set()
+	data_dict = dict()
+
+	for item in items:
+		data_start = str(item[1])
+		data_start = data_start[:10]
+		an = data_start[-4:]
+		anSet.add(an)
+
+
+	list_an = sorted(anSet)
+	lunalist = list() 
+
+	for an in range(len(list_an)):
+		lunaSet = set()
+	
+		for item in items:
+			data_start = str(item[1])
+			data_start = data_start[:10]
+			anul = data_start[-4:]
+			if anul == list_an[an]:
+				luna = data_start[3:5]
+				lunaSet.add(luna)
+		list_luna = sorted(lunaSet)
+		lunalist.append(list_luna)
+
+	for item in items:
+		data_start = str(item[1])
+		data_start = data_start[:10]
+		anul = data_start[-4:]
+		if anul == zaAnul:
+			luna = data_start[3:5]
+			if luna == zaLuna:
+				itemi.append(item)
+
+	itemi = reversed(itemi)
+
+	templateData = {
+		'items': itemi,
+		'list_an': list_an,
+		'lunalist': lunalist
+		}
+	return render_template('bazaDate.html', **templateData)
+
+
+
 @app.route("/dateFunctionare")
 def dateFunctionare():
 	global cursor
-	cursor.execute("SELECT * FROM datefunctionare ORDER BY numar DESC LIMIT 15")
+	cursor.execute("SELECT * FROM datefunctionare")
 	items = cursor.fetchall()
-#	items = reversed(items)
+
+	itemi = list()
+
+	anSet = set()
+	data_dict = dict()
+
+	for item in items:
+		data_start = str(item[1])
+		data_start = data_start[:10]
+		an = data_start[-4:]
+		anSet.add(an)
+
+
+	list_an = sorted(anSet)
+	lunalist = list() 
+
+	for an in range(len(list_an)):
+		lunaSet = set()
+	
+		for item in items:
+			data_start = str(item[1])
+			data_start = data_start[:10]
+			anul = data_start[-4:]
+			if anul == list_an[an]: 
+				luna = data_start[3:5]
+				lunaSet.add(luna)
+		list_luna = sorted(lunaSet)
+		lunalist.append(list_luna)
+	
+
+	ultimaLuna = lunalist[len(lunalist)-1]
+	ultimaLuna = ultimaLuna[len(ultimaLuna)-1]
+
+
+	for item in items:
+		data_start = str(item[1])
+		data_start = data_start[:10]
+		anul = data_start[-4:]
+		if anul == list_an[len(list_an)-1]:  
+			luna = data_start[3:5]
+			if luna == ultimaLuna:
+				itemi.append(item)
+
+
+
+	itemi = reversed(itemi)
+	
 	templateData = {
-		'items': items
+		'items': itemi,
+		'list_an': reversed(list_an),
+		'lunalist': lunalist
 		}
 	return render_template('bazaDate.html', **templateData)
+
 
 
 
@@ -684,15 +875,47 @@ def pin(pin_id, val):
 def setareSneckTimpArdere(timpArdere):
 	global timpSneckArdere
 	timpSneckArdere = timpArdere
-	url = "UPDATE functionare SET tsneck = '"+ str(timpSneckArdere) +"' WHERE nume = 'centrala'"
+	url = "UPDATE functionare SET tsneck = "+ str(timpSneckArdere) +" WHERE nume = 'centrala';"
 	cursor.execute(url)
 	conn.commit()
 	return "back"
+
+@app.route("/ventilatorTimpAprindere/<int:timpVent>")
+def setaretimpVentilatorAprindere(timpVent):
+	global timpVentilatorAprindere
+	timpVentilatorAprindere = timpVent
+	url = "UPDATE functionare SET tempvent = "+ str(timpVentilatorAprindere) +" WHERE nume = 'centrala';"
+	cursor.execute(url)
+	conn.commit()
+	return "back"
+
+@app.route("/sneckTimpAprindere/<int:timpAprindere>")
+def setaretimpSneckAprindere(timpAprindere):
+	global timpSneckAprindere
+	timpSneckAprindere= timpAprindere
+	url = "UPDATE functionare SET tstsneck = "+ str(timpSneckAprindere) +" WHERE nume = 'centrala';"
+	cursor.execute(url)
+	conn.commit()
+	return "back"
+
+
 
 @app.route("/timpSneckArdere")
 def sneckTimpArdereFunc():
 	global timpSneckArdere 
 	return str(timpSneckArdere)
+
+@app.route("/timpVentilatorAprindere")
+def timpVentilatorAprindereFunc():
+	global timpVentilatorAprindere
+	return str(timpVentilatorAprindere)
+
+@app.route("/timpSneckAprindere")
+def timpSneckAprindereFunc():
+	global timpSneckAprindere
+	return str(timpSneckAprindere)
+
+
 
 @app.route("/programCentrala/tempLiving")
 def tempLivingProgramCentrala():
